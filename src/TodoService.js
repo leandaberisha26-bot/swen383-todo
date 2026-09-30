@@ -9,16 +9,12 @@ export class TodoService {
     const trimmed = description.trim();
 
     if (trimmed.length < 3) {
-      throw new Error(
-        'Task needs at least a few characters.'
-      );
+      return null;
     }
 
     let id = Date.now();
 
-    while (
-      this.tasks.some(task => task.id === id)
-    ) {
+    while (this.tasks.some(task => task.id === id)) {
       id++;
     }
 
@@ -33,21 +29,17 @@ export class TodoService {
         type === 'urgent'
           ? 'high'
           : 'normal',
-      createdAt:
-        new Date().toLocaleTimeString()
+      createdAt: new Date().toLocaleTimeString(),
     };
 
     this.tasks.push(task);
-
     this.storage.save(this.tasks);
 
-    return task;
+    return id;
   }
 
   toggleComplete(id) {
-    const task = this.tasks.find(
-      task => task.id === id
-    );
+    const task = this.tasks.find(task => task.id === id);
 
     if (task) {
       task.completed = !task.completed;
@@ -56,28 +48,20 @@ export class TodoService {
   }
 
   deleteTask(id) {
-    this.tasks = this.tasks.filter(
-      task => task.id !== id
-    );
-
+    this.tasks = this.tasks.filter(task => task.id !== id);
     this.storage.save(this.tasks);
   }
 
   getPendingTasks() {
-    return this.tasks.filter(
-      task => !task.completed
-    );
+    return this.tasks.filter(task => !task.completed);
   }
 
   getCompletedTasks() {
-    return this.tasks.filter(
-      task => task.completed
-    );
+    return this.tasks.filter(task => task.completed);
   }
 
   getSummary() {
-    const pending =
-      this.getPendingTasks();
+    const pending = this.getPendingTasks();
 
     const urgent = pending.filter(
       task => task.priority === 'high'
@@ -85,14 +69,28 @@ export class TodoService {
 
     return {
       total: this.tasks.length,
-      done:
-        this.tasks.length -
-        pending.length,
+      done: this.tasks.length - pending.length,
       urgent,
-      normal:
-        pending.length - urgent,
-      oldest:
-        pending[0]?.desc ?? 'none'
+      normal: pending.length - urgent,
+      oldest: pending[0]?.desc ?? 'none',
     };
+  }
+
+  getWorkloadSummary() {
+    let done = 0;
+    let urgent = 0;
+    let normal = 0;
+
+    for (const task of this.tasks) {
+      if (task.completed) {
+        done++;
+      } else if (task.priority === 'high') {
+        urgent++;
+      } else {
+        normal++;
+      }
+    }
+
+    return `${done}/${this.tasks.length} done - ${urgent} urgent, ${normal} normal remaining`;
   }
 }
