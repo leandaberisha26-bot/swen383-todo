@@ -1,41 +1,57 @@
-// Handles task data and business logic.
+import { TaskBuilder } from './TaskBuilder.js';
+
+// Owns task data and business logic.
 export class TodoService {
   constructor(storage) {
     this.storage = storage;
     this.tasks = this.storage.load();
   }
 
-  addTask(description, type = 'simple') {
+  addTask(description) {
+    const trimmed = this.validate(description);
+    if (!trimmed) return null;
+
+    const task = new TaskBuilder(trimmed).build();
+    return this.store(task);
+  }
+
+  addUrgentTask(description) {
+    const trimmed = this.validate(description);
+    if (!trimmed) return null;
+
+    const task = new TaskBuilder(trimmed)
+      .setPriority('high')
+      .addLabel('URGENT')
+      .build();
+
+    return this.store(task);
+  }
+
+  validate(description) {
     const trimmed = description.trim();
 
     if (trimmed.length < 3) {
       return null;
     }
 
-    let id = Date.now();
-
-    while (this.tasks.some(task => task.id === id)) {
-      id++;
+    if (this.tasks.length >= 20) {
+      console.warn(
+        'This list is getting long - consider clearing completed tasks.'
+      );
     }
 
-    const task = {
-      id,
-      desc:
-        type === 'urgent'
-          ? `[URGENT] ${trimmed}`
-          : trimmed,
-      completed: false,
-      priority:
-        type === 'urgent'
-          ? 'high'
-          : 'normal',
-      createdAt: new Date().toLocaleTimeString(),
-    };
+    return trimmed;
+  }
+
+  store(task) {
+    // Preserve unique IDs when tasks are created quickly.
+    while (this.tasks.some(existing => existing.id === task.id)) {
+      task.id++;
+    }
 
     this.tasks.push(task);
     this.storage.save(this.tasks);
-
-    return id;
+    return task.id;
   }
 
   toggleComplete(id) {

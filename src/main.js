@@ -13,9 +13,9 @@ const input = document.getElementById('task-input');
 const addBtn = document.getElementById('add-task-btn');
 const addUrgentBtn = document.getElementById('add-urgent-btn');
 
-function add(type) {
+function submitTask(createTask) {
   try {
-    const newId = controller.addTask(input.value, type);
+    const newId = createTask(input.value);
 
     if (newId) {
       input.value = '';
@@ -30,17 +30,17 @@ function add(type) {
 
 addBtn.addEventListener('click', (event) => {
   event.preventDefault();
-  add('simple');
+  submitTask(description => controller.addTask(description));
 });
 
 addUrgentBtn.addEventListener('click', (event) => {
   event.preventDefault();
-  add('urgent');
+  submitTask(description => controller.addUrgentTask(description));
 });
 
 input.addEventListener('keydown', (event) => {
   if (event.key === 'Enter' && !event.isComposing) {
     event.preventDefault();
-    add('simple');
+    addBtn.click();
   }
 });
